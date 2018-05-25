@@ -527,29 +527,30 @@ def preprocess_input(x):
         x: (batch images) a 4D numpy array consists of RGB values within [0, 255].
            (single image) a 3D numpy array consists of RGB values within [0, 255].
     # Returns
-        Input array scaled to [-1.,1.]
-        If x is 3D, also return the padded length
+        4D numpy array scaled to [-1.,1.]
     """
-    return imagenet_utils.preprocess_input(x, mode='tf')
-    # if len(x.shape) == 4:
-    #     return imagenet_utils.preprocess_input(x, mode='tf')
-    # elif len(x.shape) == 3:
-    #     w, h, _ = x.shape
-    #     ratio = 512. / np.max([w,h])
-    #     resized = cv2.resize(x,(int(ratio*h),int(ratio*w)))
-    #     resized = resized / 127.5 - 1.
-    #     pad_x = int(512 - resized.shape[0])
-    #     resized2 = np.pad(resized,((0,pad_x),(0,0),(0,0)),mode='constant')
-    #     resized3 = np.expand_dims(resized2,0)
-    #     return resized3, pad_x
-    # else:
-    #     raise ValueError('image must be in 3D(single) or 4D(batch)')
+    if len(x.shape) == 4:
+        return imagenet_utils.preprocess_input(x, mode='tf')
+    elif len(x.shape) == 3:
+        x = x / 127.5 - 1.
+        return np.expand_dims(x, 0)
+    else:
+        raise ValueError('image must be in 3D(single) or 4D(batch)')
 
 def pad_image(x):
-    """Pad image along x with leading zeros, so that the resulting output is a squared image.
+    """Pad image along y with leading zeros, so that the resulting output's largest dimension is 512.
     Arguments
-        x: a 3D numpy array consists of RGB values.
+        x: a 3D numpy array consists of RGB values in [-1,1].
     Returns
         pad_len(int): the padding length.
+        resized(3D numpy array): 3D numpy array representing an image whose largest dimensino is 512.
     """
-    pass
+    if len(x.shape) == 4:   # remove batch dimension
+        x = np.squeeze(x,0)
+    w, h, _ = x.shape
+    ratio = 512. / np.max([w,h])
+    resized = cv2.resize(x,(int(ratio*h),int(ratio*w)))
+    pad_x = int(512 - resized.shape[0])
+    resized2 = np.pad(resized,((0,pad_x),(0,0),(0,0)),mode='constant')
+    resized3 = np.expand_dims(resized2,0)
+    return resized3, pad_x
