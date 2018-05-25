@@ -25,6 +25,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import cv2
 import numpy as np
 
 from keras.models import Model
@@ -521,10 +522,34 @@ def Deeplabv3(weights='pascal_voc', input_tensor=None, input_shape=(512, 512, 3)
 
 
 def preprocess_input(x):
-    """Preprocesses a numpy array encoding a batch of images.
+    """Preprocesses a numpy array encoding a batch of images or a single image.
     # Arguments
-        x: a 4D numpy array consists of RGB values within [0, 255].
+        x: (batch images) a 4D numpy array consists of RGB values within [0, 255].
+           (single image) a 3D numpy array consists of RGB values within [0, 255].
     # Returns
         Input array scaled to [-1.,1.]
+        If x is 3D, also return the padded length
     """
     return imagenet_utils.preprocess_input(x, mode='tf')
+    # if len(x.shape) == 4:
+    #     return imagenet_utils.preprocess_input(x, mode='tf')
+    # elif len(x.shape) == 3:
+    #     w, h, _ = x.shape
+    #     ratio = 512. / np.max([w,h])
+    #     resized = cv2.resize(x,(int(ratio*h),int(ratio*w)))
+    #     resized = resized / 127.5 - 1.
+    #     pad_x = int(512 - resized.shape[0])
+    #     resized2 = np.pad(resized,((0,pad_x),(0,0),(0,0)),mode='constant')
+    #     resized3 = np.expand_dims(resized2,0)
+    #     return resized3, pad_x
+    # else:
+    #     raise ValueError('image must be in 3D(single) or 4D(batch)')
+
+def pad_image(x):
+    """Pad image along x with leading zeros, so that the resulting output is a squared image.
+    Arguments
+        x: a 3D numpy array consists of RGB values.
+    Returns
+        pad_len(int): the padding length.
+    """
+    pass
